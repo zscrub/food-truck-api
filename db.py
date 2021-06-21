@@ -2,7 +2,7 @@ import mysql.connector
 
 DB_USER = 'root'
 DB_HOST = '127.0.0.1'
-DB_PASS = "pass"
+DB_PASS = 'pass'
 DB_PORT = 3306
 DB_DATABASE = 'food-truck'
 
