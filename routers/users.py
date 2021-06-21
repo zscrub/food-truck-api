@@ -10,10 +10,12 @@ class User(BaseModel):
     username: str
     password: str
     email: str
-    cardname: None
-    cc: None
-    ccdate: None
-    cvv: None
+
+class Card(BaseModel):
+    cardname: str
+    cc: str
+    ccdate: str
+    cvv: int
 
 router = APIRouter(prefix='/users', responses={404: {'description':'Not Found'}})
 
@@ -40,8 +42,18 @@ async def new_user(user: User):
     query_(query, data, cursor, cnx)
     return 'User created: {0}'.format(data)
 
+# add card to account
 @router.patch('/add_card', status_code=200)
-def add_card_to_acc(id: int, cardname: str, cc: str, ccdate: str, cvv: int):
-    query = 'UPDATE users SET (cardname=%s, cc=%s, ccdate=%s, cvv=%d) WHERE id=%d;'
-    data = (cardname, cc, ccdate, cvv, id)
+def add_card_to_acc(id: int, card: Card):
+    query = 'UPDATE users SET cardname=%s, cc=%s, ccdate=%s, cvv=%s WHERE id=%s;'
+    data = (card.cardname, card.cc, card.ccdate, card.cvv, id)
     query_(query, data, cursor, cnx)
+    return 'Card number added to account with id {0}'.format(id)
+
+# delete user by id
+@router.delete('/delete_user', status_code=200)
+def delete_user(id: int):
+    query = 'DELETE FROM users WHERE id=%s;'
+    data = (id, )
+    query_(query, data, cursor, cnx)
+    return 'Account deleted with id {0}'.format(id)
