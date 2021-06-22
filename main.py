@@ -1,3 +1,5 @@
+# “On my honor, I have neither received nor given any unauthorized assistance on this assignment.” Zachary Rubin
+
 from db import *
 from pydantic import BaseModel
 from fastapi import Depends, FastAPI
