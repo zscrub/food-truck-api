@@ -10,6 +10,7 @@ class User(BaseModel):
     username: str
     password: str
     email: str
+    account_type: str
 
 class Card(BaseModel):
     cardname: str
@@ -37,8 +38,8 @@ def get_user(id: int):
 # create new user
 @router.post('/new', status_code=201)
 async def new_user(user: User):
-    query = 'INSERT INTO users (username, password, email) VALUES (%s, %s, %s);'
-    data = (user.username, user.password, user.email)
+    query = 'INSERT INTO users (username, password, email, account_type) VALUES (%s, %s, %s, %s);'
+    data = (user.username, user.password, user.email, user.account_type)
     query_(query, data, cursor, cnx)
     return 'User created: {0}'.format(data)
 
@@ -57,3 +58,11 @@ def delete_user(id: int):
     data = (id, )
     query_(query, data, cursor, cnx)
     return 'Account deleted with id {0}'.format(id)
+
+# update account type
+@router.patch('/update_account_type', status_code=200)
+def update_account_type(id: int, account_type: str):
+    query = 'UPDATE users SET account_type=%s WHERE id=%s;'
+    data = (account_type, id)
+    query_(query, data, cursor, cnx)
+    return 'Updated account_type to {0} with id {1}'.format(account_type, id)
