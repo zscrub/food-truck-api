@@ -27,6 +27,22 @@ def all_users():
     result = query_no_data(query, cursor, cnx)
     return result
 
+# def all_users(auth: Optional[str] = Header(None)):
+#     auth_ = check_auth(auth)
+#     if auth_ == False:
+#         raise HTTPException(status_code=403, detail='Login')
+
+#     ac = path_handler(auth_['role'], ('p', 'a'))
+#     match ac:
+#         case True:    
+#             query = 'SELECT * FROM users;'
+#             result = query_no_data(query, cursor, cnx)
+#             return result
+#         case False:
+#             return 401
+#         case _:
+#             raise HTTPException(status_code=403, detail='Login')
+
 # return a specific user
 @router.get('/user')
 def get_user(id: int):
@@ -51,14 +67,6 @@ def add_card_to_acc(id: int, card: Card):
     query_(query, data, cursor, cnx)
     return 'Card number added to account with id {0}'.format(id)
 
-# delete user by id
-@router.delete('/delete_user', status_code=200)
-def delete_user(id: int):
-    query = 'DELETE FROM users WHERE id=%s;'
-    data = (id, )
-    query_(query, data, cursor, cnx)
-    return 'Account deleted with id {0}'.format(id)
-
 # update account type
 @router.patch('/update_account_type', status_code=200)
 def update_account_type(id: int, account_type: str):
@@ -66,3 +74,11 @@ def update_account_type(id: int, account_type: str):
     data = (account_type, id)
     query_(query, data, cursor, cnx)
     return 'Updated account_type to {0} with id {1}'.format(account_type, id)
+
+# delete user by id
+@router.delete('/delete', status_code=200)
+def delete_user(id: int):
+    query = 'DELETE FROM users WHERE id=%s;'
+    data = (id, )
+    query_(query, data, cursor, cnx)
+    return 'Account deleted with id {0}'.format(id)

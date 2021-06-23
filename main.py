@@ -3,10 +3,11 @@
 from db import *
 from pydantic import BaseModel
 from fastapi import Depends, FastAPI
-from routers import users
+from routers import users, foodtrucks
 
 app = FastAPI()
 app.include_router(users.router)
+app.include_router(foodtrucks.router)
 
 @app.get('/')
 def home():
