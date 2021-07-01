@@ -12,3 +12,6 @@ app.include_router(foodtrucks.router)
 @app.get('/')
 def home():
     return 'Food-Trucks-API'
+
+if __name__ == "__main__":
+    app.run(debug=True)
