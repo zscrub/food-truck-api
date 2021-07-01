@@ -3,6 +3,7 @@ from enum import Enum
 from authentication import *
 from typing import Optional
 from pydantic import BaseModel
+from passlib.hash import sha256_crypt
 from fastapi import APIRouter, Header, HTTPException
 from fastapi.responses import JSONResponse
 
@@ -16,7 +17,7 @@ class Card(BaseModel):
     cardname: str
     cc: str
     ccdate: str
-    cvv: int
+    cvv: str
 
 router = APIRouter(prefix='/users', responses={404: {'description':'Not Found'}})
 
@@ -54,8 +55,12 @@ def get_user(id: int):
 # create new user
 @router.post('/new', status_code=201)
 async def new_user(user: User):
+    username = user.username
+    username = ''.join(e for e in username if e.isalnum())
+    email = user.email
+    email = ''.join(e for e in email if e.isalnum() or e == '@' or e == '.')
     query = 'INSERT INTO users (username, password, email, account_type) VALUES (%s, %s, %s, %s);'
-    data = (user.username, user.password, user.email, user.account_type)
+    data = (username, sha256_crypt.encrypt(user.password), email, user.account_type)
     query_(query, data, cursor, cnx)
     return 'User created: {0}'.format(data)
 
@@ -63,7 +68,7 @@ async def new_user(user: User):
 @router.patch('/add_card', status_code=200)
 def add_card_to_acc(id: int, card: Card):
     query = 'UPDATE users SET cardname=%s, cc=%s, ccdate=%s, cvv=%s WHERE id=%s;'
-    data = (card.cardname, card.cc, card.ccdate, card.cvv, id)
+    data = (card.cardname, sha256_crypt.encrypt(card.cc), sha256_crypt.encrypt(card.ccdate), sha256_crypt.encrypt(str(card.cvv)), id)
     query_(query, data, cursor, cnx)
     return 'Card number added to account with id {0}'.format(id)
 
