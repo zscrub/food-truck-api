@@ -1,11 +1,18 @@
+
 from db import *
+from bcrypt import *
 from enum import Enum
 from authentication import *
 from typing import Optional
-from pydantic import BaseModel
+from datetime import timedelta
+from pydantic import BaseModel, main
 from passlib.hash import sha256_crypt
-from fastapi import APIRouter, Header, HTTPException
+from fastapi_login import LoginManager
+from fastapi_login import LoginManager
 from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Header, HTTPException, Depends
+from fastapi.security.oauth2 import OAuth2PasswordRequestForm
+from fastapi_login.exceptions import InvalidCredentialsException
 
 class User(BaseModel):
     username: str
@@ -13,11 +20,23 @@ class User(BaseModel):
     email: str
     account_type: str
 
+    def __repr__(self):
+        return 'User {0}'.format(self.id)
+
+class Login(BaseModel):
+    username: str
+    email: str
+    password: str
+
 class Card(BaseModel):
     cardname: str
     cc: str
     ccdate: str
     cvv: str
+
+salt = gensalt()
+
+manager = LoginManager(secret_key, token_url='/auth/token')
 
 router = APIRouter(prefix='/users', responses={404: {'description':'Not Found'}})
 
@@ -59,8 +78,9 @@ async def new_user(user: User):
     username = ''.join(e for e in username if e.isalnum())
     email = user.email
     email = ''.join(e for e in email if e.isalnum() or e == '@' or e == '.')
+    password = hashpw(user.password.encode(), salt)
     query = 'INSERT INTO users (username, password, email, account_type) VALUES (%s, %s, %s, %s);'
-    data = (username, sha256_crypt.encrypt(user.password), email, user.account_type)
+    data = (username, password, email, user.account_type)
     query_(query, data, cursor, cnx)
     return 'User created: {0}'.format(data)
 
@@ -87,3 +107,30 @@ def delete_user(id: int):
     data = (id, )
     query_(query, data, cursor, cnx)
     return 'Account deleted with id {0}'.format(id)
+
+# log in/OAuth2
+
+@manager.user_loader
+def load_user(username: str):
+    query = 'SELECT * FROM users WHERE username=%s;'
+    data = (username, )
+    user = query_return(query, data, cursor, cnx)
+    return user
+
+@router.post('/auth/token')
+def login(data: OAuth2PasswordRequestForm = Depends()):
+    username = data.username
+    password = data.password
+
+    user = load_user(username)
+
+    if not user:
+        raise InvalidCredentialsException
+    elif not checkpw(password.encode(), user[0]['password'].encode()):
+        raise InvalidCredentialsException
+
+    access_token = manager.create_access_token(
+        data = dict(sub=username),
+        expires = timedelta(hours=12)
+    )
+    return {'access_token': access_token, 'token_type': 'bearer'}
