@@ -11,7 +11,7 @@ from fastapi_login import LoginManager
 from fastapi_login import LoginManager
 from fastapi.responses import JSONResponse
 from fastapi import APIRouter, Header, HTTPException, Depends
-from fastapi.security.oauth2 import OAuth2PasswordRequestForm
+from fastapi.security.oauth2 import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi_login.exceptions import InvalidCredentialsException
 
 class User(BaseModel):
@@ -39,6 +39,18 @@ salt = gensalt()
 manager = LoginManager(secret_key, token_url='/auth/token')
 
 router = APIRouter(prefix='/users', responses={404: {'description':'Not Found'}})
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='/auth/token')
+
+def decode_token(token, user):
+    user = load_user(user, token)
+    return user
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    user = decode_token(token)
+    if not user:
+        raise HTTPException
+    return user
 
 # return all users
 @router.get('/')
@@ -91,6 +103,16 @@ def add_card_to_acc(id: int, card: Card):
     data = (card.cardname, sha256_crypt.encrypt(card.cc), sha256_crypt.encrypt(card.ccdate), sha256_crypt.encrypt(str(card.cvv)), id)
     query_(query, data, cursor, cnx)
     return 'Card number added to account with id {0}'.format(id)
+
+@router.patch('/add_business', status_code=200)
+def add_business_to_acc(id: int, business_id: int):
+    query = 'UPDATE users SET business_id=%s WHERE id=%s;'
+    query2 = 'UPDATE foodtrucks SET ownerid=%s WHERE id=%s'
+    data = (business_id, id)
+    data2 = (id, business_id)
+    query_(query, data, cursor, cnx)
+    query_(query2, data2, cursor, cnx)
+    return 'Business with id {0} had been added to account with id {1}'.format(business_id, id)
 
 # update account type
 @router.patch('/update_account_type', status_code=200)

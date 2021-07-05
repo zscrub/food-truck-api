@@ -23,11 +23,19 @@ def all_businesses():
     result = query_no_data(query, cursor, cnx)
     return result
 
-# return a specific user 
+# return a specific business by id
 @router.get('/business')
 def get_business(id: int):
     query = 'SELECT * FROM foodtrucks WHERE id=%s;'
     data = (id, )
+    result = query_return(query, data, cursor, cnx)
+    return result
+
+# return a business id by username
+@router.get('/id')
+def get_business_by_name(name: str):
+    query = 'SELECT business_id FROM users WHERE username=%s;'
+    data = (name, )
     result = query_return(query, data, cursor, cnx)
     return result
 
